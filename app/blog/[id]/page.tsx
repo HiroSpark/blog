@@ -1,25 +1,26 @@
 import matter from "gray-matter";
 import rehypeStringify from "rehype-stringify";
 import remarkParse from "remark-parse";
-import remarkGfm from "remark-gfm"
+import remarkGfm from "remark-gfm";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 import rehypeShiki from "@shikijs/rehype";
 
 // zenn独自記法に対応するパーサー（昔書いたもののコピー）
 
-import { visit as unistVisit } from 'unist-util-visit'
+import { visit as unistVisit } from "unist-util-visit";
 
-const MESSAGE_START = ':::message\n';
-const ALERT_START   = ':::message alert\n';
+const MESSAGE_START = ":::message\n";
+const ALERT_START = ":::message alert\n";
 
-const BLOCK_END     = '\n:::';
+const BLOCK_END = "\n:::";
 
-const removeIdentifer = (child, identifer) => child.value.replace(identifer, '');
+const removeIdentifer = (child, identifer) =>
+  child.value.replace(identifer, "");
 
 const zennBlockParser = () => {
   return (tree) => {
-    unistVisit(tree, 'paragraph', (node, index, parent) => {
+    unistVisit(tree, "paragraph", (node, index, parent) => {
       for (const startIdentifer of [MESSAGE_START, ALERT_START]) {
         const children = node.children;
         const firstChild = children[0];
@@ -31,15 +32,14 @@ const zennBlockParser = () => {
           firstChild.value = removeIdentifer(firstChild, startIdentifer);
           lastChild.value = removeIdentifer(lastChild, BLOCK_END);
           parent.children[index] = {
-            type: 'blockquote',
-            children: [{ type: 'paragraph', children }],
+            type: "blockquote",
+            children: [{ type: "paragraph", children }],
           };
         }
       }
     });
   };
 };
-
 
 export async function generateStaticParams() {
   const posts = await fetch(
@@ -60,7 +60,9 @@ export default async function Page({
 }) {
   const { id } = await params;
   const raw = await fetch(
-    "https://api.github.com/repos/HiroSpark/articles/contents/articles/" + id + ".md",
+    "https://api.github.com/repos/HiroSpark/articles/contents/articles/" +
+      id +
+      ".md",
   ).then((res) => res.json());
   const markdown = Buffer.from(raw.content, "base64").toString();
   const { data, content } = matter(markdown);
@@ -71,15 +73,16 @@ export default async function Page({
     .use(remarkRehype)
     // js:main.mjsのようにファイル名を併記されると言語名が認識されなくなるが今は目を瞑る
     .use(rehypeShiki, {
-      theme: 'github-light'
+      theme: "github-light",
     })
     .use(rehypeStringify)
     .process(content)
     .then((res) => res.value);
 
   return (
-    <main>
+    <div>
+      <h1 className="text-2xl font-bold">{data.title}</h1>
       <div dangerouslySetInnerHTML={{ __html: html }} />
-    </main>
+    </div>
   );
 }
