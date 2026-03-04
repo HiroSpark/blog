@@ -69,6 +69,12 @@ export default async function Page({
     "https://api.github.com/repos/HiroSpark/articles/contents/articles/" +
       id +
       ".md",
+    {
+      cache: "force-cache",
+      headers: {
+        Authorization: "Bearer " + process.env.GH_TOKEN,
+      },
+    },
   ).then((res) => res.json());
   const markdown = Buffer.from(raw.content, "base64").toString();
   const { data, content } = matter(markdown);
