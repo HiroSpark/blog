@@ -7,6 +7,8 @@ import { unified } from "unified";
 import rehypeShiki from "@shikijs/rehype";
 import Image from "next/image";
 
+import octokit from "@/libs/octokit";
+
 // zenn独自記法に対応するパーサー（昔書いたもののコピー）
 
 import { visit as unistVisit } from "unist-util-visit";
@@ -43,15 +45,18 @@ const zennBlockParser = () => {
 };
 
 export async function generateStaticParams() {
-  const posts = await fetch(
-    "https://api.github.com/repos/HiroSpark/articles/contents/articles/",
-    {
-      cache: "force-cache",
-      headers: {
-        Authorization: "Bearer " + process.env.GH_TOKEN,
-      },
-    },
-  ).then((res) => res.json());
+  const posts = await octokit
+    .request("GET /repos/{owner}/{repo}/contents/{path}", {
+      owner: "HiroSpark",
+      repo: "articles",
+      path: "articles",
+    })
+    .then((res) => res.data)
+
+  if (!Array.isArray(posts)) {
+    throw new Error("Expected list of files from GitHub API");
+  }
+
   return posts.map((post) => {
     const id = post.name.split(".")[0];
     return {
@@ -66,17 +71,13 @@ export default async function Page({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const raw = await fetch(
-    "https://api.github.com/repos/HiroSpark/articles/contents/articles/" +
-      id +
-      ".md",
-    {
-      cache: "force-cache",
-      headers: {
-        Authorization: "Bearer " + process.env.GH_TOKEN,
-      },
-    },
-  ).then((res) => res.json());
+  const raw = await octokit
+    .request("GET /repos/{owner}/{repo}/contents/{path}", {
+      owner: "HiroSpark",
+      repo: "articles",
+      path: "articles/" + id + ".md",
+    })
+    .then((res) => res.data)
   const markdown = Buffer.from(raw.content, "base64").toString();
   const { data, content } = matter(markdown);
   const html = await unified()

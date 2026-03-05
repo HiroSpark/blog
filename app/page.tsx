@@ -2,22 +2,32 @@ import matter from "gray-matter";
 import Image from "next/image";
 import Link from "next/link";
 
+import octokit from "@/libs/octokit";
+
 import "./globals.css";
 
 export default async function Home() {
-  const list = await fetch(
-    "https://api.github.com/repos/HiroSpark/articles/contents/articles/",
-    {
-      cache: "force-cache",
-      headers: {
-        Authorization: "Bearer " + process.env.GH_TOKEN,
-      },
-    },
-  ).then((res) => res.json());
+  const list = await octokit
+    .request("GET /repos/{owner}/{repo}/contents/{path}", {
+      owner: "HiroSpark",
+      repo: "articles",
+      path: "articles",
+    })
+    .then((res) => res.data);
+
+  if (!Array.isArray(list)) {
+    throw new Error("Expected list of files from GitHub API");
+  }
+
   const meta = await Promise.all(
     list.map(async (file) => {
       const id = file.name.split(".")[0];
-      const markdown = await fetch(file.download_url).then((res) => res.text());
+      if (!file.download_url) {
+        return { id, data: {} };
+      }
+      const markdown = await fetch(file?.download_url).then((res) =>
+        res.text(),
+      );
       const { data } = matter(markdown);
       return { id, data };
     }),

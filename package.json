@@ -12,6 +12,7 @@
     "@shikijs/rehype": "^4.0.1",
     "gray-matter": "^4.0.3",
     "next": "16.0.10",
+    "octokit": "^5.0.5",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "rehype-stringify": "^10.0.1",
