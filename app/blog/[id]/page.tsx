@@ -1,17 +1,18 @@
 import matter from "gray-matter";
+import { unified } from "unified";
 import rehypeStringify from "rehype-stringify";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import remarkRehype from "remark-rehype";
-import { unified } from "unified";
 import rehypeShiki from "@shikijs/rehype";
+
 import Image from "next/image";
 
 import octokit from "@/libs/octokit";
 
 import type { Root, Text } from "mdast";
 
-// zenn独自記法に対応するパーサー（昔書いたもののコピー）
+// zenn独自記法に対応するパーサー
 
 import { visit as unistVisit } from "unist-util-visit";
 
@@ -29,9 +30,10 @@ const zennBlockParser = () => {
   return (tree: Root) => {
     unistVisit(tree, "paragraph", (node, index, parent) => {
       if (parent === undefined || index === undefined) return;
+      const children = node.children;
+      if (children.length === 0) return;
+
       for (const startIdentifier of [MESSAGE_START, ALERT_START]) {
-        const children = node.children;
-        if (children.length === 0) return;
         const firstChild = children[0];
         const lastChild = children[children.length - 1];
 
@@ -52,6 +54,18 @@ const zennBlockParser = () => {
     });
   };
 };
+
+const mdToHtml = unified()
+  .use(remarkParse)
+  .use(zennBlockParser)
+  .use(remarkGfm)
+  .use(remarkRehype)
+  // js:main.mjsのようにファイル名を併記されると言語名が認識されなくなるが今は目を瞑る
+  .use(rehypeShiki, {
+    theme: "github-light",
+  })
+  .use(rehypeStringify)
+  .freeze();
 
 export async function generateStaticParams() {
   const posts = await octokit
@@ -84,7 +98,7 @@ export default async function Page({
     .request("GET /repos/{owner}/{repo}/contents/{path}", {
       owner: "HiroSpark",
       repo: "articles",
-      path: "articles/" + id + ".md",
+      path: `articles/${id}.md`,
     })
     .then((res) => res.data);
   if (!("content" in raw)) {
@@ -92,16 +106,7 @@ export default async function Page({
   }
   const markdown = Buffer.from(raw.content, "base64").toString();
   const { data, content } = matter(markdown);
-  const html = await unified()
-    .use(remarkParse)
-    .use(zennBlockParser)
-    .use(remarkGfm)
-    .use(remarkRehype)
-    // js:main.mjsのようにファイル名を併記されると言語名が認識されなくなるが今は目を瞑る
-    .use(rehypeShiki, {
-      theme: "github-light",
-    })
-    .use(rehypeStringify)
+  const html = await mdToHtml()
     .process(content)
     .then((res) => res.value);
 
