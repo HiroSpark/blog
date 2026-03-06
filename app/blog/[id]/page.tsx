@@ -106,9 +106,7 @@ export default async function Page({
   }
   const markdown = Buffer.from(raw.content, "base64").toString();
   const { data, content } = matter(markdown);
-  const html = await mdToHtml()
-    .process(content)
-    .then((res) => res.value);
+  const html = await mdToHtml.process(content).then((res) => res.value);
 
   return (
     <div>
