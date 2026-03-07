@@ -4,8 +4,6 @@ import Link from "next/link";
 
 import octokit from "@/libs/octokit";
 
-import "./globals.css";
-
 export default async function Home() {
   const list = await octokit
     .request("GET /repos/{owner}/{repo}/contents/{path}", {
@@ -16,18 +14,16 @@ export default async function Home() {
     .then((res) => res.data);
 
   if (!Array.isArray(list)) {
-    throw new Error("Expected list of files from GitHub API");
+    throw new Error("レスポンスが配列ではない");
   }
 
   const meta = await Promise.all(
     list.map(async (file) => {
       const id = file.name.split(".")[0];
       if (!file.download_url) {
-        return { id, data: {} };
+        throw new Error(`${id}にはdownload_urlがありません`);
       }
-      const markdown = await fetch(file?.download_url).then((res) =>
-        res.text(),
-      );
+      const markdown = await fetch(file.download_url).then((res) => res.text());
       const { data } = matter(markdown);
       return { id, data };
     }),
@@ -65,7 +61,7 @@ export default async function Home() {
       {/* featured articles */}
       <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-7">
         {meta.map(({ id, data }) => {
-          const url = "/blog/" + id;
+          const url = `/blog/${id}`;
           return (
             <li key={id}>
               <Link
