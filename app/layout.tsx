@@ -28,9 +28,9 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-100`}
       >
-        <div className="flex min-h-screen items-center justify-center font-sans bg-zinc-100">
+        <div className="flex min-h-screen items-center justify-center font-sans">
           <main className="max-w-xl min-h-screen w-full px-6">
             <h1 className="font-bold text-2xl my-12">
               <Link href="/">HiroSpark</Link>
