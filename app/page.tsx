@@ -59,7 +59,7 @@ export default async function Home() {
       </div>
 
       {/* featured articles */}
-      <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-7">
+      <ul className="my-12 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-7">
         {meta.map(({ id, data }) => {
           const url = `/blog/${id}`;
           return (
